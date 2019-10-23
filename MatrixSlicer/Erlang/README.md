@@ -11,4 +11,4 @@
   <h3>Example:</h3><br>
     > khf1:feldarabolasa([[a,b,c,d],[e,f,g,h]],{2,2}).<br>
   <h3>Output:</h3><br>
-    The list of submatrixes.<br>
+    The list of submatrixes.(e.g. [[a,b,e,f],[c,d,g,h]]) <br>
