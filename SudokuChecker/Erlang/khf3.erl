@@ -25,10 +25,16 @@ checkSol(ProposalMx , Solution)->
 
     ResultNeighb = checkNeighbors(SimpleProposalList,SimpleSolutionList,[],Fullsize),
 
+    ResultNumbers = checkNumbers(SimpleProposalList,SimpleSolutionList),
+
     if (ResultParity == 1) ->
         if (ResultBasic == 1) ->
            if (ResultNeighb == 1) ->
-                1==1;
+                if (ResultNumbers == 1) ->
+                    1==1;
+                (1==1) ->
+                    1==0
+                end;
             (1==1) ->
                 1==0
             end;
@@ -134,6 +140,26 @@ checkOddEven([[PropHead|_]|PropTail],[SolHead|SolTail]) ->
         0
     end.
 
+checkNumbers([],[]) -> 1;
+checkNumbers(_,[]) -> 1;
+checkNumbers([],_) -> 1;
+checkNumbers([[PropHead|_]|PropTail],[[SolHead|_]|SolTail]) ->
+
+    CheckNumber = checkListForNumber(PropHead),
+    if (CheckNumber) ->
+        RequestedNumber = getNumberFromList(PropHead),
+        % io:format("Value: ~p vs ~p ~n", [RequestedNumber,SolHead]),
+        ProceedNumber = SolHead==RequestedNumber;
+    (1==1) -> 
+        ProceedNumber = true
+    end,
+
+    if (ProceedNumber) ->
+        checkNumbers(PropTail,SolTail);
+    (1==1) ->
+        0
+    end.
+
 
 checkBasicRules(Solution, SudokuSize, FullSize) ->
     SolutionCols = feldarabolasa(Solution, {1,FullSize}),
@@ -162,3 +188,29 @@ listFind(Element, List) ->
 
 even(X) when X >= 0 -> (X band 1) == 0.
 odd(X) when X > 0 -> not even(X).
+
+checkListForNumber([]) -> false;
+checkListForNumber([H|T]) ->
+    if (H < 16 ) ->
+        if (H > 0 ) ->
+            true;
+        (1==1) ->
+            checkListForNumber(T)
+        end;
+    (1==1) ->
+        checkListForNumber(T)
+    end.
+
+
+getNumberFromList([]) -> 0;
+getNumberFromList([H|T]) ->
+    if (H < 16 ) ->
+        if (H > 0 ) ->
+            % io:format("RETURNING: ~p ~n", [H]),
+            H;
+        (1==1) ->
+            getNumberFromList(T)
+        end;
+    (1==1) ->
+        getNumberFromList(T)
+    end.
