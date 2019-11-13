@@ -3,7 +3,7 @@
 -vsn('2019-11-13').
 -export([megoldase/2]).
 -import(string,[len/1,concat/2,chr/2,substr/3,str/2,to_lower/1,to_upper/1]).
--import(lists,[sublist/2,reverse/1,filter/2,append/1,flatlength/1]).
+-import(lists,[sublist/2,reverse/1,filter/2,append/1,flatlength/1,nth/2]).
 -import(khf1,[feldarabolasa/2]).
 %-compile(export_all).
 
@@ -15,22 +15,97 @@ megoldase(Proposal, Solution)-> checkSol(Proposal,Solution).
 checkSol(ProposalMx , Solution)->
     {SudokuSize,_} = ProposalMx,
     {_,ProposalMatrix} = ProposalMx,
-    Fullsize = length(ProposalMatrix),
-    
+    Fullsize = length(Solution),
+
     ResultBasic = checkBasicRules(Solution, SudokuSize, Fullsize),
 
     SimpleProposalList = feldarabolasa(ProposalMatrix,{1,1}),
     SimpleSolutionList = feldarabolasa(Solution,{1,1}),
     ResultParity = checkOddEven(SimpleProposalList,SimpleSolutionList),
 
+    ResultNeighb = checkNeighbors(SimpleProposalList,SimpleSolutionList,[],Fullsize),
+
     if (ResultParity == 1) ->
         if (ResultBasic == 1) ->
-            1==1;
+           if (ResultNeighb == 1) ->
+                1==1;
+            (1==1) ->
+                1==0
+            end;
         (1==1) ->
             1==0
         end;
     (1==1) ->
         1==0
+    end.
+
+checkNeighbors([],[],_,_) -> 1;
+checkNeighbors(_,[],_,_) -> 1;
+checkNeighbors([],_,_,_) -> 1;
+
+checkNeighbors([[PropHead|_]|PropTail],[SolHead|SolTail],[],SeekSize) ->
+    TailLength = length(SolTail),
+    % io:format("LENGTH: ~p ~n", [TailLength]),
+    if (TailLength >= SeekSize) ->
+            [SouthElement|_] = nth(SeekSize, SolTail);
+        (1==1) -> 
+            SouthElement = 0
+    end,
+
+    % io:format("Value: ~p ~n", [SouthElement]),
+
+    CheckWest = listFind(w,PropHead),
+    if (CheckWest) ->
+        ProceedWest = false;
+    (1==1) -> 
+        ProceedWest = true
+    end,
+
+    CheckSouth = listFind(s,PropHead),
+    if (CheckSouth) ->
+        ProceedSouth = odd(hd(SolHead)+SouthElement);
+    (1==1) -> 
+        ProceedSouth = true
+    end,
+
+
+    if (ProceedWest and ProceedSouth) ->
+        checkNeighbors(PropTail,SolTail,SolHead,SeekSize);
+    (1==1) ->
+        0
+    end;
+
+checkNeighbors([[PropHead|_]|PropTail],[SolHead|SolTail],[Previous|_],SeekSize) ->
+    TailLength = length(SolTail),
+    % io:format("LENGTH: ~p ~n", [TailLength]),
+    if (TailLength >= SeekSize) ->
+            [SouthElement|_] = nth(SeekSize, SolTail);
+        (1==1) -> 
+            SouthElement = 0
+    end,
+
+    % io:format("Value: ~p ~n", [SouthElement]),
+
+    CheckWest = listFind(w,PropHead),
+    if (CheckWest) ->
+        ProceedWest = odd(hd(SolHead)+Previous);
+    (1==1) -> 
+        ProceedWest = true
+    end,
+
+    CheckSouth = listFind(s,PropHead),
+    if (CheckSouth) ->
+        
+        ProceedSouth = odd(hd(SolHead)+SouthElement);
+    (1==1) -> 
+        ProceedSouth = true
+    end,
+
+
+    if (ProceedWest and ProceedSouth) ->
+        checkNeighbors(PropTail,SolTail,SolHead,SeekSize);
+    (1==1) ->
+        0
     end.
 
 
