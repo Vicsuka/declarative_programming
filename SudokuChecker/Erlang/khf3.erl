@@ -16,8 +16,48 @@ checkSol(ProposalMx , Solution)->
     {SudokuSize,_} = ProposalMx,
     {_,ProposalMatrix} = ProposalMx,
     Fullsize = length(ProposalMatrix),
-    Result = checkBasicRules(Solution, SudokuSize, Fullsize),
-    Result == 1.
+    
+    ResultBasic = checkBasicRules(Solution, SudokuSize, Fullsize),
+
+    SimpleProposalList = feldarabolasa(ProposalMatrix,{1,1}),
+    SimpleSolutionList = feldarabolasa(Solution,{1,1}),
+    ResultParity = checkOddEven(SimpleProposalList,SimpleSolutionList),
+
+    if (ResultParity == 1) ->
+        if (ResultBasic == 1) ->
+            1==1;
+        (1==1) ->
+            1==0
+        end;
+    (1==1) ->
+        1==0
+    end.
+
+
+checkOddEven([],[]) -> 1;
+checkOddEven(_,[]) -> 1;
+checkOddEven([],_) -> 1;
+checkOddEven([[PropHead|_]|PropTail],[SolHead|SolTail]) ->
+
+    CheckEven = listFind(e,PropHead),
+    if (CheckEven) ->
+        ProceedEven = even(hd(SolHead));
+    (1==1) -> 
+        ProceedEven = true
+    end,
+
+    CheckOdd = listFind(o,PropHead),
+    if (CheckOdd) ->
+        ProceedOdd = odd(hd(SolHead));
+    (1==1) -> 
+        ProceedOdd = true
+    end,
+
+    if (ProceedEven and ProceedOdd) ->
+        checkOddEven(PropTail,SolTail);
+    (1==1) ->
+        0
+    end.
 
 
 checkBasicRules(Solution, SudokuSize, FullSize) ->
@@ -41,3 +81,9 @@ checkDuplicate([H|T]) ->
         0
     end.
     
+
+listFind(Element, List) ->
+  lists:member(Element, List).
+
+even(X) when X >= 0 -> (X band 1) == 0.
+odd(X) when X > 0 -> not even(X).
