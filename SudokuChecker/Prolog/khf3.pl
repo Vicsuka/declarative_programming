@@ -15,12 +15,13 @@ checkSol(s(SudokuSize,[PropHead|PropTail]) , [SolHead|SolTail]):-
     length([SolHead|SolTail],Fullsize),
     % writeln(Fullsize),
 
-    checkBasicRules([SolHead|SolTail], SudokuSize, Fullsize, ResultBasic).
+    checkBasicRules([SolHead|SolTail], SudokuSize, Fullsize, ResultBasic),
 
     feldarabolasa([PropHead|PropTail],1-1,SimpleProposalList),
     feldarabolasa([SolHead|SolTail],1-1,SimpleSolutionList),
 
-    % checkOddEven(SimpleProposalList,SimpleSolutionList,ResultParity),
+    checkOdd(SimpleProposalList,SimpleSolutionList,ResultOdd),
+    checkEven(SimpleProposalList,SimpleSolutionList,ResultEven).
 
     % checkNeighbors(SimpleProposalList,SimpleSolutionList,[],Fullsize,ResultNeighb),
 
@@ -42,7 +43,7 @@ checkBasicRules([Head|Tail], SudokuSize, FullSize, Result) :-
     feldarabolasa([Head|Tail], FullSize-1, SolutionRows),
     feldarabolasa([Head|Tail], SudokuSize-SudokuSize, SolutionSubMatrixes),
     append3(SolutionCols,SolutionRows,SolutionSubMatrixes,FullList),
-    writeln(FullList),
+    % writeln(FullList),
     checkDuplicate(FullList).
 
 
@@ -52,8 +53,6 @@ checkDuplicate([H|T]) :-
     (is_set(H)) ->
         checkDuplicate(T);
     (
-        writeln('Duplicate in: '),
-        writeln(H),
         false
     ).
         
@@ -69,16 +68,59 @@ append3(X, Y, Z, XYZ) :-
 
 
 
+checkOdd([],[],ResultParity) :- true.
+checkOdd(_,[],ResultParity) :- true.
+checkOdd([],_,ResultParity) :- true.
+checkOdd([[PHead|_]|PTail],[[SHead|_]|STail],ResultParity) :-
+
+    member(o,PHead) ->
+    (
+        (odd(SHead)) ->
+            checkOdd(PTail,STail,ResultParity);
+        (
+            false
+        )
+    );  
+    (
+        checkOdd(PTail,STail,ResultParity)
+    ).
+
+
+checkEven([],[],ResultParity) :- true.
+checkEven(_,[],ResultParity) :- true.
+checkEven([],_,ResultParity) :- true.
+checkEven([[PHead|_]|PTail],[[SHead|_]|STail],ResultParity) :-
+
+    member(e,PHead) ->
+    (
+        (even(SHead)) ->
+            checkEven(PTail,STail,ResultParity);
+        (
+            false
+        )
+    ); 
+    (
+        checkEven(PTail,STail,ResultParity)
+    ).
+
+
+    % member(e,PHead) ->
+    %     writeln('CHECK EVEN: '),
+
+    % member(o,PHead) ->
+    %     writeln('NOT ODD: '),
+
+
+    % checkOddEven(PTail,STail,ResultParity).
 
 
 
+even(X) :- 0 is mod(X, 2).
+odd(X) :- 1 is mod(X, 2).
 
 
-
-
-
-
-
+createFalse(Element) :- 1>2.
+createTrue(Element) :- 1<2.
 
 
 
