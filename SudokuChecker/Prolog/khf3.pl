@@ -2,9 +2,11 @@
 % megoldase(+SSpec,+SSol) : sikeres, ha az SSol érték-mátrix megoldása az SSpec Sudoku-feladványnak.
 :- use_module(library(lists)).
 
-megoldase(Proposal, Solution):- checkSol(Proposal, Solution).
+megoldase(Proposal, Solution):- reDirect(Proposal, Solution).
 
-checkSol(s(SudokuSize,[PropHead|PropTail]) , [SolHead|SolTail]):-
+reDirect(Proposal, Solution):- checkSol(Proposal, Solution, Result).
+
+checkSol(s(SudokuSize,[PropHead|PropTail]) , [SolHead|SolTail], Result):-
     % writeln('Requested: '),
     % writeln(SudokuSize),
     % writeln(PropHead),
@@ -23,9 +25,10 @@ checkSol(s(SudokuSize,[PropHead|PropTail]) , [SolHead|SolTail]):-
     checkOdd(SimpleProposalList,SimpleSolutionList,ResultOdd),
     checkEven(SimpleProposalList,SimpleSolutionList,ResultEven),
     checkWest(SimpleProposalList,SimpleSolutionList,[],Fullsize,ResultWest),
-    checkSouth(SimpleProposalList,SimpleSolutionList,Fullsize,ResultSouth).
+    checkSouth(SimpleProposalList,SimpleSolutionList,Fullsize,ResultSouth),
 
-    % checkNumbers(SimpleProposalList,SimpleSolutionList,ResultNumbers)
+    checkNumbers(SimpleProposalList,SimpleSolutionList,ResultNumbers),
+    !.
 
 
     % (ResultBasic) ->
@@ -120,9 +123,6 @@ checkWest([[PHead|_]|PTail],[[SHead|_]|STail],[],SeekSize,Result) :-
             (odd(SHead+Previous)) ->
                 false;
             (
-                writeln('Not West elements: '),
-                write(SHead),
-                writeln(Previous),
                 false
             )
         ); 
@@ -138,9 +138,6 @@ checkWest([[PHead|_]|PTail],[[SHead|_]|STail],[Previous|_],SeekSize,Result) :-
             
                 checkWest(PTail,STail,[SHead|_],SeekSize,Result);
             (
-                writeln('Not West elements: '),
-                write(SHead),
-                writeln(Previous),
                 false
             )
         ); 
@@ -156,50 +153,48 @@ checkSouth([],_,_,_) :- true.
 checkSouth([[PHead|_]|PTail],[[SHead|_]|STail],SeekSize,Result) :-
     length(STail,TailLength),
     RealSize is SeekSize-1,
-    (TailLength >= RealSize) ->
-        nth0(RealSize, STail, [SouthElement|_]);
-    (
-        SouthElement is 0
-    ),
+    
 
     member(s,PHead) ->
+    (
+        (TailLength > 0) ->
+            (TailLength >= RealSize) ->
+                nth0(RealSize, STail, SouthElement);
+            (
+                SouthElement is 0
+            );
         (
-            (odd(SHead+SouthElement)) ->
-            
+            SouthElement is 0
+        ),
+        (odd(SHead+SouthElement)) ->
                 checkSouth(PTail,STail,SeekSize,Result);
             (
-                writeln('Not South elements: '),
-                write(SHead),
-                writeln(SouthElement),
                 false
             )
-        ); 
-        (
-            checkSouth(PTail,STail,SeekSize,Result)
-        ).
+    ); 
+    (
+        checkSouth(PTail,STail,SeekSize,Result)
+    ).
 
 checkNumbers([],[],_) :- true.
 checkNumbers(_,[],_) :- true.
 checkNumbers([],_,_) :- true.
-checkNumbers([[PropHead|_]|PropTail],[[SolHead|_]|SolTail],Result) :-
+checkNumbers([[PHead|_]|PTail],[[SHead|_]|STail],Result) :-
 
-    member(v,PHead) ->
+    member(v(Number),PHead) ->
         (
-            (odd(SHead+Previous)) ->
+            (Number =:= SHead) ->
             
-                checkWest(PTail,STail,[SHead|_],SeekSize,Result);
+                checkNumbers(PTail,STail,Result);
             (
-                writeln('Not West elements: '),
-                write(SHead),
-                writeln(Previous),
                 false
             )
         ); 
         (
-            checkWest(PTail,STail,[SHead|_],SeekSize,Result)
+            checkNumbers(PTail,STail,Result)
         ).
 
-
+getNumber(v(X),Result):- Result is X.
 
 even(X) :- 0 is mod(X, 2).
 odd(X) :- 1 is mod(X, 2).
@@ -207,14 +202,6 @@ odd(X) :- 1 is mod(X, 2).
 
 createFalse(Element) :- 1>2.
 createTrue(Element) :- 1<2.
-
-countNumbers([],0).
-countNumbers([H|Tail], N) :-
-    countNumbers(Tail, N1),
-    (  number(H)
-    -> N is N1 + 1
-    ;  N = N1
-    ).
 
 
 
