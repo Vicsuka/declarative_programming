@@ -159,22 +159,25 @@ checkSouth([[PHead|_]|PTail],[[SHead|_]|STail],SeekSize,Result) :-
     (
         (TailLength > 0) ->
             (TailLength >= RealSize) ->
-                nth0(RealSize, STail, SouthElement);
+                seekSouth(RealSize, STail, SouthElement),
+                (odd(SHead+SouthElement)) ->
+                        checkSouth(PTail,STail,SeekSize,Result);
+                    (
+                        false
+                    );
             (
                 SouthElement is 0
             );
         (
             SouthElement is 0
-        ),
-        (odd(SHead+SouthElement)) ->
-                checkSouth(PTail,STail,SeekSize,Result);
-            (
-                false
-            )
+        )
     ); 
     (
         checkSouth(PTail,STail,SeekSize,Result)
     ).
+
+seekSouth(Size,Tail,Result):-
+    nth0(Size, Tail, [Result|_]).
 
 checkNumbers([],[],_) :- true.
 checkNumbers(_,[],_) :- true.
