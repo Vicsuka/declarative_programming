@@ -21,19 +21,26 @@ checkSol(s(SudokuSize,[PropHead|PropTail]) , [SolHead|SolTail]):-
     feldarabolasa([SolHead|SolTail],1-1,SimpleSolutionList),
 
     checkOdd(SimpleProposalList,SimpleSolutionList,ResultOdd),
-    checkEven(SimpleProposalList,SimpleSolutionList,ResultEven).
+    checkEven(SimpleProposalList,SimpleSolutionList,ResultEven),
+    checkWest(SimpleProposalList,SimpleSolutionList,[],Fullsize,ResultWest),
+    checkSouth(SimpleProposalList,SimpleSolutionList,Fullsize,ResultSouth).
 
-    % checkNeighbors(SimpleProposalList,SimpleSolutionList,[],Fullsize,ResultNeighb),
-
-    % checkNumbers(SimpleProposalList,SimpleSolutionList,ResultNumbers).
-
-
+    % checkNumbers(SimpleProposalList,SimpleSolutionList,ResultNumbers)
 
 
-
-
-
-
+    % (ResultBasic) ->
+    %     (ResultOdd) ->
+    %         (ResultEven) ->
+    %             true;
+    %         (
+    %             false
+    %         );
+    %     (
+    %         false
+    %     );
+    % (
+    %     false
+    % ).
 
 
 
@@ -103,15 +110,94 @@ checkEven([[PHead|_]|PTail],[[SHead|_]|STail],ResultParity) :-
         checkEven(PTail,STail,ResultParity)
     ).
 
+checkWest([],[],_,_,_) :- true.
+checkWest(_,[],_,_,_) :- true.
+checkWest([],_,_,_,_) :- true.
 
-    % member(e,PHead) ->
-    %     writeln('CHECK EVEN: '),
+checkWest([[PHead|_]|PTail],[[SHead|_]|STail],[],SeekSize,Result) :-
+    member(w,PHead) ->
+        (
+            (odd(SHead+Previous)) ->
+                false;
+            (
+                writeln('Not West elements: '),
+                write(SHead),
+                writeln(Previous),
+                false
+            )
+        ); 
+        (
+            checkWest(PTail,STail,[SHead|_],SeekSize,Result)
+        ).
 
-    % member(o,PHead) ->
-    %     writeln('NOT ODD: '),
+
+checkWest([[PHead|_]|PTail],[[SHead|_]|STail],[Previous|_],SeekSize,Result) :-
+    member(w,PHead) ->
+        (
+            (odd(SHead+Previous)) ->
+            
+                checkWest(PTail,STail,[SHead|_],SeekSize,Result);
+            (
+                writeln('Not West elements: '),
+                write(SHead),
+                writeln(Previous),
+                false
+            )
+        ); 
+        (
+            checkWest(PTail,STail,[SHead|_],SeekSize,Result)
+        ).
 
 
-    % checkOddEven(PTail,STail,ResultParity).
+checkSouth([],[],_,_) :- true.
+checkSouth(_,[],_,_) :- true.
+checkSouth([],_,_,_) :- true.
+
+checkSouth([[PHead|_]|PTail],[[SHead|_]|STail],SeekSize,Result) :-
+    length(STail,TailLength),
+    RealSize is SeekSize-1,
+    (TailLength >= RealSize) ->
+        nth0(RealSize, STail, [SouthElement|_]);
+    (
+        SouthElement is 0
+    ),
+
+    member(s,PHead) ->
+        (
+            (odd(SHead+SouthElement)) ->
+            
+                checkSouth(PTail,STail,SeekSize,Result);
+            (
+                writeln('Not South elements: '),
+                write(SHead),
+                writeln(SouthElement),
+                false
+            )
+        ); 
+        (
+            checkSouth(PTail,STail,SeekSize,Result)
+        ).
+
+checkNumbers([],[],_) :- true.
+checkNumbers(_,[],_) :- true.
+checkNumbers([],_,_) :- true.
+checkNumbers([[PropHead|_]|PropTail],[[SolHead|_]|SolTail],Result) :-
+
+    member(v,PHead) ->
+        (
+            (odd(SHead+Previous)) ->
+            
+                checkWest(PTail,STail,[SHead|_],SeekSize,Result);
+            (
+                writeln('Not West elements: '),
+                write(SHead),
+                writeln(Previous),
+                false
+            )
+        ); 
+        (
+            checkWest(PTail,STail,[SHead|_],SeekSize,Result)
+        ).
 
 
 
@@ -121,6 +207,30 @@ odd(X) :- 1 is mod(X, 2).
 
 createFalse(Element) :- 1>2.
 createTrue(Element) :- 1<2.
+
+countNumbers([],0).
+countNumbers([H|Tail], N) :-
+    countNumbers(Tail, N1),
+    (  number(H)
+    -> N is N1 + 1
+    ;  N = N1
+    ).
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
