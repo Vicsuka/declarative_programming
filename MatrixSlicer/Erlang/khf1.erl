@@ -100,15 +100,16 @@ rowPartitioner(Row,ColNumber,MaxCol,CurrentJ,Result) ->
          (1==1) ->
             TempResult = Row, 
             NewResult = Result ++ TempResult,
-            
+            % io:format("OUTPUT: ~p.~n", [NewResult]),
             filter(fun(X) -> X /= [] end, NewResult)
+            
    end.
 
 mergeSameList(L1,L2) -> mergeSameList(L1,L2,[]).
 
 mergeSameList(L1,L2,Merged) ->
-   % io:format("The value is: ~p,~p    ~p.~n", [L1,L2,Merged]),
-   Size = flatlength(L1),
+   % io:format("The value is: ~p PLUSSZ ~p  EQUALS  ~p.~n", [L1,L2,Merged]),
+   Size = length(L1),
    if (Size > 0) ->
          IsList = is_list(hd(L1)) and is_list(hd(L2)) ,
          IsListL1 = is_list(hd(L1)),
@@ -125,6 +126,7 @@ mergeSameList(L1,L2,Merged) ->
                end
          end;
       (1==1) ->
+         % io:format("MERGED: ~p.~n", [Merged]),
          Merged
    end.
 
