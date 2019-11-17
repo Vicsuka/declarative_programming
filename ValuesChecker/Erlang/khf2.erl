@@ -15,7 +15,51 @@
 %% koordinátájú mezőjében megengedett értékek listája.
 
 
-ertekek(Proposal, Solution)-> checkField(Proposal,Solution).
+ertekek(Proposal, Field)-> checkField(Proposal,Field).
 
-checkField(Proposal,Solution) ->
-        io:format("LENGTH: ~n").
+checkField(Proposal,Field) ->
+    {SudokuSize,_} = Proposal,
+    {_,ProposalMatrix} = Proposal,
+    Fullsize = length(ProposalMatrix),
+    {FieldRow,_} = Field,
+    {_,FieldCol} = Field,
+    RowConstraint = getRowNumbers(ProposalMatrix,FieldRow,Fullsize),
+    io:format("RowConstraint: ~p ~n", [RowConstraint]),
+    ColConstraint = getColNumbers(ProposalMatrix,FieldCol,Fullsize),
+    io:format("ColConstraint: ~p ~n", [ColConstraint]),
+    % SubConstraint = getSubNumbers(SudokuSize,ProposalMatrix,FieldRow,FieldCol,Fullsize),
+    io:format("LENGTH: ~n").
+
+getRowNumbers(Matrix,RowNumber,Size) ->
+    Allrows = feldarabolasa(Matrix, {1,Size}),
+    Myrow = lists:nth(RowNumber, Allrows),
+    extractNumbersFromList(Myrow,[]).
+
+getColNumbers(Matrix,ColNumber,Size) ->
+    Allcols = feldarabolasa(Matrix, {Size,1}),
+    Mycol = lists:nth(ColNumber, Allcols),
+    extractNumbersFromList(Mycol,[]).
+
+extractNumbersFromList([],Result) -> Result;
+extractNumbersFromList([H|T],Result) ->
+    Number = getNumberFromList(H),
+    if (Number > 0) ->
+            NewResult = Result ++ [getNumberFromList(H)],
+            extractNumbersFromList(T,NewResult);
+        (1==1) ->
+            extractNumbersFromList(T,Result)
+    end.
+    
+
+getNumberFromList([]) -> 0;
+getNumberFromList([H|T]) ->
+    if (H < 16 ) ->
+        if (H > 0 ) ->
+            H;
+        (1==1) ->
+            getNumberFromList(T)
+        end;
+    (1==1) ->
+        getNumberFromList(T)
+    end.
+
