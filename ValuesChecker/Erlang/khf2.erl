@@ -24,13 +24,34 @@ checkField(Proposal,Field) ->
     {FieldRow,_} = Field,
     {_,FieldCol} = Field,
     RowConstraint = getRowNumbers(ProposalMatrix,FieldRow,Fullsize),
-    io:format("RowConstraint: ~p ~n", [RowConstraint]),
+    % io:format("RowConstraint: ~p ~n", [RowConstraint]),
     ColConstraint = getColNumbers(ProposalMatrix,FieldCol,Fullsize),
-    io:format("ColConstraint: ~p ~n", [ColConstraint]),
-    SubConstraint = getSubNumbers(ProposalMatrix,SudokuSize,FieldRow,FieldCol,Fullsize),
-    io:format("SubConstraint: ~p ~n", [SubConstraint]),
-    Possibilites = generateAllPossibleVallues(Fullsize,1,[]),
-    io:format("Possibilites: ~p ~n", [Possibilites]).
+    % io:format("ColConstraint: ~p ~n", [ColConstraint]),
+    SubConstraint = getSubNumbers(ProposalMatrix,SudokuSize,FieldRow,FieldCol),
+    % io:format("SubConstraint: ~p ~n", [SubConstraint]),
+    ParityConstraints = checkParity(ProposalMatrix,FieldRow,FieldCol,Fullsize),
+    % io:format("ParityConstraints: ~p ~n", [ParityConstraints]),
+    NumberConstraint = checkNumber(ProposalMatrix,FieldRow,FieldCol,Fullsize),
+    % io:format("NumberConstraint: ~p ~n", [NumberConstraint]),
+
+    Possibilites = generateAllPossibleValues(Fullsize,1,[]),
+    % io:format("Possibilites: ~p ~n", [Possibilites]),
+
+    Size = length(NumberConstraint),
+    if (Size > 0) ->
+            NewResult11 = NumberConstraint -- RowConstraint,
+            NewResult22 = NewResult11 -- ColConstraint,
+            NewResult33 = NewResult22 -- SubConstraint,
+            NewResult44 = NewResult33 -- ParityConstraints,
+            NewResult44;
+        (1==1) ->
+            NewResult = Possibilites -- RowConstraint,
+            NewResult2 = NewResult -- ColConstraint,
+            NewResult3 = NewResult2 -- SubConstraint,
+            NewResult4 = NewResult3 -- ParityConstraints,
+            NewResult4
+    end.
+
 
 
 getRowNumbers(Matrix,RowNumber,Size) ->
@@ -43,15 +64,9 @@ getColNumbers(Matrix,ColNumber,Size) ->
     Mycol = lists:nth(ColNumber, Allcols),
     extractNumbersFromList(Mycol,[]).
 
-getSubNumbers(Matrix,SudokuSize,RowN,ColN,FullSize) ->
+getSubNumbers(Matrix,SudokuSize,RowN,ColN) ->
     Allmx = feldarabolasa(Matrix, {SudokuSize,SudokuSize}),
-    SubRowNumber = (RowN - SudokuSize),
-    if (SubRowNumber > 0) ->
-            SubmxNumber = SudokuSize * SubRowNumber + ((ColN - 1) div SudokuSize) + 1;
-        (1==1) ->
-            SubmxNumber = ((ColN - 1) div SudokuSize) + 1
-    end,
-    % io:format("Index: ~p ~n", [SubmxNumber]),
+    SubmxNumber = ((RowN - 1) div SudokuSize) * SudokuSize + ((ColN - 1) div SudokuSize) + 1,
     Mymx = lists:nth(SubmxNumber, Allmx),
     extractNumbersFromList(Mymx,[]).
 
@@ -66,14 +81,102 @@ extractNumbersFromList([H|T],Result) ->
             extractNumbersFromList(T,Result)
     end.
     
-generateAllPossibleVallues(Size, CurrentValue, Output) ->
+generateAllPossibleValues(Size, CurrentValue, Output) ->
     if (CurrentValue > Size) ->
             Output;
         (1==1) ->
             NewOut = Output ++ [CurrentValue],
-            generateAllPossibleVallues(Size, CurrentValue+1, NewOut)
+            generateAllPossibleValues(Size, CurrentValue+1, NewOut)
+    end.
+    
+generateEvenValues(Size, CurrentValue, Output) ->
+    if (CurrentValue > Size) ->
+            Output;
+        (1==1) ->
+            IsEven = even(CurrentValue),
+            if ( IsEven ) ->
+                NewOut = Output ++ [CurrentValue],
+                generateEvenValues(Size, CurrentValue+1, NewOut);
+            (1==1) ->
+                generateEvenValues(Size, CurrentValue+1, Output)
+            end
     end.
 
+    
+generateOddValues(Size, CurrentValue, Output) ->
+    if (CurrentValue > Size) ->
+            Output;
+        (1==1) ->
+            IsOdd = odd(CurrentValue),
+            if ( IsOdd ) ->
+                NewOut = Output ++ [CurrentValue],
+                generateOddValues(Size, CurrentValue+1, NewOut);
+            (1==1) ->
+                generateOddValues(Size, CurrentValue+1, Output)
+            end
+    end.
+
+generateExactValues(Size, Number, CurrentValue, Output) ->
+    if (CurrentValue > Size) ->
+            Output;
+        (1==1) ->
+            if ( Number == CurrentValue ) ->
+                NewOut = Output ++ [CurrentValue],
+                generateExactValues(Size, Number, CurrentValue+1, NewOut);                
+            (1==1) ->
+                generateExactValues(Size, Number, CurrentValue+1, Output)
+            end
+    end.
+
+checkParity(Matrix,RowN,ColN,Size) ->
+    SimpleProposalList = feldarabolasa(Matrix,{1,1}),
+    Myfield =  lists:nth(((RowN-1) * Size + ColN) , SimpleProposalList),
+    % io:format("Constraint field: ~p ~n", [Myfield]),
+    [List|_] = Myfield,
+
+    CheckEven = listFind(e,List),
+    CheckOdd = listFind(o,List),
+
+    if (CheckEven) ->
+            if (CheckOdd) ->
+                generateAllPossibleValues(Size, 0, []);
+            (1==1) ->
+                generateOddValues(Size,0,[])
+            end;
+        (1==1) ->
+            if (CheckOdd) ->
+                generateEvenValues(Size, 0, []);
+            (1==1) ->
+                []
+            end
+    end.
+
+checkNumber(Matrix,RowN,ColN,Size) ->
+    SimpleProposalList = feldarabolasa(Matrix,{1,1}),
+    Myfield =  lists:nth(((RowN-1) * Size + ColN) , SimpleProposalList),
+    [List|_] = Myfield,
+
+    CheckNumber = checkListForNumber(List),
+    if (CheckNumber) ->
+        Number = getNumberFromList(List),
+        % io:format("Number: ~p ~n", [Number]),
+        generateExactValues(Size, Number, 0, []);
+    (1==1) -> 
+        []
+    end.
+
+
+checkListForNumber([]) -> false;
+checkListForNumber([H|T]) ->
+    if (H < 16) ->
+        if (H > 0) ->
+            true;
+        (1==1) ->
+            checkListForNumber(T)
+        end;
+    (1==1) ->
+        checkListForNumber(T)
+    end.
 
 getNumberFromList([]) -> 0;
 getNumberFromList([H|T]) ->
@@ -87,3 +190,8 @@ getNumberFromList([H|T]) ->
         getNumberFromList(T)
     end.
 
+listFind(Element, List) ->
+  lists:member(Element, List).
+
+even(X) when X >= 0 -> (X band 1) == 0.
+odd(X) when X > 0 -> not even(X).
