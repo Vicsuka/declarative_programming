@@ -27,8 +27,11 @@ checkField(Proposal,Field) ->
     io:format("RowConstraint: ~p ~n", [RowConstraint]),
     ColConstraint = getColNumbers(ProposalMatrix,FieldCol,Fullsize),
     io:format("ColConstraint: ~p ~n", [ColConstraint]),
-    % SubConstraint = getSubNumbers(SudokuSize,ProposalMatrix,FieldRow,FieldCol,Fullsize),
-    io:format("LENGTH: ~n").
+    SubConstraint = getSubNumbers(ProposalMatrix,SudokuSize,FieldRow,FieldCol,Fullsize),
+    io:format("SubConstraint: ~p ~n", [SubConstraint]),
+    Possibilites = generateAllPossibleVallues(Fullsize,1,[]),
+    io:format("Possibilites: ~p ~n", [Possibilites]).
+
 
 getRowNumbers(Matrix,RowNumber,Size) ->
     Allrows = feldarabolasa(Matrix, {1,Size}),
@@ -40,6 +43,19 @@ getColNumbers(Matrix,ColNumber,Size) ->
     Mycol = lists:nth(ColNumber, Allcols),
     extractNumbersFromList(Mycol,[]).
 
+getSubNumbers(Matrix,SudokuSize,RowN,ColN,FullSize) ->
+    Allmx = feldarabolasa(Matrix, {SudokuSize,SudokuSize}),
+    SubRowNumber = (RowN - SudokuSize),
+    if (SubRowNumber > 0) ->
+            SubmxNumber = SudokuSize * SubRowNumber + ((ColN - 1) div SudokuSize) + 1;
+        (1==1) ->
+            SubmxNumber = ((ColN - 1) div SudokuSize) + 1
+    end,
+    % io:format("Index: ~p ~n", [SubmxNumber]),
+    Mymx = lists:nth(SubmxNumber, Allmx),
+    extractNumbersFromList(Mymx,[]).
+
+
 extractNumbersFromList([],Result) -> Result;
 extractNumbersFromList([H|T],Result) ->
     Number = getNumberFromList(H),
@@ -50,6 +66,14 @@ extractNumbersFromList([H|T],Result) ->
             extractNumbersFromList(T,Result)
     end.
     
+generateAllPossibleVallues(Size, CurrentValue, Output) ->
+    if (CurrentValue > Size) ->
+            Output;
+        (1==1) ->
+            NewOut = Output ++ [CurrentValue],
+            generateAllPossibleVallues(Size, CurrentValue+1, NewOut)
+    end.
+
 
 getNumberFromList([]) -> 0;
 getNumberFromList([H|T]) ->
