@@ -39,10 +39,15 @@ checkField(Proposal,Field) ->
 
     Size = length(NumberConstraint),
     if (Size > 0) ->
-            NewResult11 = NumberConstraint -- RowConstraint,
-            NewResult22 = NewResult11 -- ColConstraint,
-            NewResult33 = NewResult22 -- SubConstraint,
-            NewResult44 = NewResult33 -- ParityConstraints,
+            RowConstraint1 = RowConstraint -- NumberConstraint,
+            ColConstraint1 = ColConstraint -- NumberConstraint,
+            SubConstraint1 = SubConstraint -- NumberConstraint,
+            ParityConstraint1 = ParityConstraints -- NumberConstraint,
+
+            NewResult11 = NumberConstraint -- RowConstraint1,
+            NewResult22 = NewResult11 -- ColConstraint1,
+            NewResult33 = NewResult22 -- SubConstraint1,
+            NewResult44 = NewResult33 -- ParityConstraint1,
             NewResult44;
         (1==1) ->
             NewResult = Possibilites -- RowConstraint,
@@ -139,13 +144,13 @@ checkParity(Matrix,RowN,ColN,Size) ->
 
     if (CheckEven) ->
             if (CheckOdd) ->
-                generateAllPossibleValues(Size, 0, []);
+                generateAllPossibleValues(Size, 1, []);
             (1==1) ->
-                generateOddValues(Size,0,[])
+                generateOddValues(Size,1,[])
             end;
         (1==1) ->
             if (CheckOdd) ->
-                generateEvenValues(Size, 0, []);
+                generateEvenValues(Size, 1, []);
             (1==1) ->
                 []
             end
@@ -160,7 +165,7 @@ checkNumber(Matrix,RowN,ColN,Size) ->
     if (CheckNumber) ->
         Number = getNumberFromList(List),
         % io:format("Number: ~p ~n", [Number]),
-        generateExactValues(Size, Number, 0, []);
+        generateExactValues(Size, Number, 1, []);
     (1==1) -> 
         []
     end.
