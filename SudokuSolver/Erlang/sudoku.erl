@@ -1,14 +1,14 @@
 -module(sudoku).
 -author('vicsuka@gmail.com').
 -vsn('2019-11-17').
--export([sudoku/1,calculatePossibilites/6]).
+-export([sudoku/1,calculatePossibilites/6,addFirstPossibleValue/7,addPossibleSteps/3,removeDoubleBrackets/2]).
 
 -import(khf1,[feldarabolasa/2]).
 -import(khf2,[ertekek/2]).
 -import(khf3,[megoldase/2]).
 
 -import(string,[len/1,concat/2,chr/2,substr/3,str/2,to_lower/1,to_upper/1]).
--import(lists,[sublist/2,reverse/1,filter/2,append/1,flatlength/1]).
+-import(lists,[sublist/2,reverse/1,filter/2,append/1,append/2,flatlength/1]).
 -import(math,[sqrt/1]).
 
 % -type sspec() :: {size(), board()}.
@@ -21,56 +21,205 @@
 
 % -spec sudoku:sudoku(SSpec :: sspec()) -> SSols :: [ssol()].
 %% SSols az SSpec feladványt kielégítő megoldások listája.
-sudoku(Matrix) -> solveProblems(Matrix, []).
+sudoku({_,Matrix}) -> solveProblems(Matrix, []).
 
 solveProblems(Matrix, []) ->
     Fullsize = length(Matrix),
-    Solution = solveSudoku(Fullsize,Matrix,[]),
-    io:format("Solution: ~p ~n",[Solution]).
+    ReSolution = solveSudokuV2(Fullsize,Matrix,[],[],1,[]),
+    ReSolution.
 
-solveSudoku(Fullsize,Matrix,[]) ->
-    SimpleList = feldarabolasa(Matrix,{1,1}),
-    PossibleSteps = calculatePossibilites(isqrt(Fullsize),Matrix,SimpleList,1,1,[]),
-    % io:format("Possible: ~p ~n",[PossibleSteps]),
+solveSudokuV2(Fullsize,Matrix,[],[],Counter,[]) ->
+    SimpleMatrixList = feldarabolasa(Matrix,{1,1}),
+    PossibleSteps = calculatePossibilites(isqrt(Fullsize),Matrix,SimpleMatrixList,1,1,[]),
+    % SimpleList = addPossibleSteps(SimpleMatrixList, [[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[]],[]),
+    % %io:format("Possible: ~p ~n",[PossibleSteps]),
 
-    Added = addPossibleSteps(SimpleList,PossibleSteps,[]),
-    % io:format("Added: ~p ~n",[Added]),
-
-    NewSolution = addToSolution(isqrt(Fullsize),PossibleSteps,[],0),
-    % io:format("NewSolution: ~p ~n",[NewSolution]),
-
-    PartitionedAdded = createPartition(Added,Fullsize,[],[],1),
-    % io:format("PartitionedAdded: ~p ~n",[PartitionedAdded]),
-
-    PartitionedSolution = createPartition(NewSolution,Fullsize,[],[],1),
-    % io:format("PartitionedSolution: ~p ~n",[PartitionedSolution]),
-
-    solveSudoku(Fullsize,PartitionedAdded,PartitionedSolution);
+    solveSudokuV2(Fullsize,Matrix,PossibleSteps,SimpleMatrixList,Counter,[],[],0,[],[],[],0).
 
 
-solveSudoku(Fullsize,Matrix,Solution) ->
-    SimpleList = feldarabolasa(Matrix,{1,1}),
-    IsDone = megoldase({isqrt(Fullsize),Matrix},Solution),
-    if (IsDone) ->
-        Solution;
-    (1==1) ->
-        PossibleSteps = calculatePossibilites(isqrt(Fullsize),Matrix,SimpleList,1,1,[]),
-        io:format("Possible: ~p ~n",[PossibleSteps]),
+solveSudokuV2(Fullsize,Matrix,PossibleSteps,_,Counter,SolutionsArray,BackUpArray,BackUpIndex,BackUpMatrix,BackUpPossibleSteps,BackUpSimpleList,BackUpCounter) ->    
+    if (Counter > 20) ->
+        io:format("COULD NOT SOLVE ~n");
+    (1==1) ->           
+        SimpleMatrixList = removeDoubleBrackets(feldarabolasa(Matrix,{1,1}),[]),
+        %io:format("STEP: ~p ~n",[Counter]),
+        %io:format("FOR MATRIX: ~p ~n",[Matrix]),
+        %io:format("Possible: ~p ~n",[PossibleSteps]),
+        %io:format("List: ~p ~n",[SimpleMatrixList]),
 
-        Added = addPossibleSteps(SimpleList,PossibleSteps,[]),
-        % io:format("Added: ~p ~n",[Added]),
+        %ADD VALUES THAT HAVE ONLY 1 POSSIBILITY
+        NextSimpleList = addPossibleSteps(SimpleMatrixList,PossibleSteps,[]),
+        %io:format("SURE VALUES: ~p ~n",[NextSimpleList]),
 
-        NewSolution = addToSolution(isqrt(Fullsize),PossibleSteps,[],0),
-        % io:format("NewSolution: ~p ~n",[NewSolution]),
+        if (NextSimpleList == SimpleMatrixList) ->
 
-        PartitionedAdded = createPartition(Added,Fullsize,[],[],1),
-        % io:format("PartitionedAdded: ~p ~n",[PartitionedAdded]),
+            %FIND BEST FIELD (SMALLEST POSSIBLE STEPS BIGGER THAN 1)
+            Smallest = findSmallest(PossibleSteps,16),
+            %io:format("Smallest: ~p ~n",[Smallest]),
 
-        PartitionedSolution = createPartition(NewSolution,Fullsize,[],[],1),
-        % io:format("PartitionedSolution: ~p ~n",[PartitionedSolution]),
 
-        solveSudoku(Fullsize,PartitionedAdded,PartitionedSolution)
+            %ADD FIRST POSSIBLE VALUE TO MX
+            {AdvancedSimpleList,NewBackUpArray,NewBackUpIndex} = addFirstPossibleValue(SimpleMatrixList, PossibleSteps, [], [], Smallest, 0, 1),
+            %io:format("WE CHOSE: ~p, BACKUPS: ~p at: ~p ~n",[AdvancedSimpleList,NewBackUpArray,NewBackUpIndex]),
+
+            %PARTITION CURRENT CONSTRAINT TO MATRIX
+            NextMatrix = createPartition(AdvancedSimpleList,Fullsize,[],[],1),
+            %io:format("NextMatrix: ~p ~n",[NextMatrix]),
+
+            %NEXT POSSIBLE MOVES
+            NextPossibleSteps = calculatePossibilites(isqrt(Fullsize),NextMatrix,AdvancedSimpleList,1,1,[]),
+            %io:format("NextPossibleSteps: ~p ~n",[NextPossibleSteps]),
+
+            %CURRENT SOLUTION FOR CHECKING
+            ThisSolution = addToSolution(isqrt(Fullsize),NextPossibleSteps,[],0),
+            PartitionedSolution = createPartition(ThisSolution,Fullsize,[],[],1),
+            %io:format("PartitionedSolution: ~p ~n",[PartitionedSolution]),
+
+            %LOGGING
+            %io:format("Current SOLUTION: ~p ~n",[PartitionedSolution]),
+
+            %CHECK IF SUDOKU IS SOLVEABLE
+            Possible = checkPossibility(NextPossibleSteps),
+
+            IsDone = megoldase({isqrt(Fullsize),NextMatrix},PartitionedSolution),
+            %io:format("DONE? ~p ~n",[IsDone]),
+
+            if (IsDone) ->
+                NewsolutionAdded = SolutionsArray ++ PartitionedSolution,
+                NewsolutionAdded;
+
+                % Return = [NewsolutionAdded,{BackUpArray,BackUpIndex,BackUpMatrix,BackUpPossibleSteps,BackUpSimpleList,BackUpCounter}],
+                % Return;
+            (1==1) ->
+                if (Possible) ->
+                    Response = solveSudokuV2(Fullsize,NextMatrix,NextPossibleSteps,AdvancedSimpleList,Counter+1,SolutionsArray,NewBackUpArray,NewBackUpIndex,Matrix,PossibleSteps,SimpleMatrixList,Counter),
+                    
+                    if (is_list(Response)) ->
+                        Response;
+                        % %io:format("LIST: ~p ~n",[Response]),
+                        % [AddSolutionX|BackUps] = Response,
+
+                        % {Try2Array,Try2Index,Try2Matrix,Try2PossibleSteps,Try2SimpleList,Try2Counter} = hd(BackUps),
+
+                        % NewPossibleSteps2 = lists:sublist(Try2PossibleSteps,Try2Index-1) ++ [Try2Array] ++ lists:nthtail(Try2Index,Try2PossibleSteps),
+                        % solveSudokuV2(Fullsize,Try2Matrix,NewPossibleSteps2,Try2SimpleList,Try2Counter,AddSolutionX,BackUpArray,BackUpIndex,BackUpMatrix,BackUpPossibleSteps,BackUpSimpleList,BackUpCounter);
+                    (1==1) ->
+                        {TryArray,TryIndex,TryMatrix,TryPossibleSteps,TrySimpleList,TryCounter} = Response,
+
+                        NewPossibleSteps = lists:sublist(TryPossibleSteps,TryIndex-1) ++ [TryArray] ++ lists:nthtail(TryIndex,TryPossibleSteps),
+                        solveSudokuV2(Fullsize,TryMatrix,NewPossibleSteps,TrySimpleList,TryCounter,SolutionsArray,BackUpArray,BackUpIndex,BackUpMatrix,BackUpPossibleSteps,BackUpSimpleList,BackUpCounter)
+                    end;
+                (1==1) ->                
+                    {BackUpArray,BackUpIndex,BackUpMatrix,BackUpPossibleSteps,BackUpSimpleList,BackUpCounter}
+                end
+            end;
+        (1==1) ->
+            %io:format("ADDED VALUE%!!!% ~n"),
+            %PARTITION CURRENT CONSTRAINT TO MATRIX
+            NextMatrix = createPartition(NextSimpleList,Fullsize,[],[],1),
+            %io:format("NextMatrix: ~p ~n",[NextMatrix]),
+
+            %NEXT POSSIBLE MOVES
+            NextPossibleSteps = calculatePossibilites(isqrt(Fullsize),NextMatrix,NextSimpleList,1,1,[]),
+            %io:format("NextPossibleSteps: ~p ~n",[NextPossibleSteps]),
+
+            %CURRENT SOLUTION FOR CHECKING
+            ThisSolution = addToSolution(isqrt(Fullsize),NextPossibleSteps,[],0),
+            PartitionedSolution = createPartition(ThisSolution,Fullsize,[],[],1),
+            %io:format("PartitionedSolution: ~p ~n",[PartitionedSolution]),
+
+            %LOGGING
+            %io:format("Current SOLUTION: ~p ~n",[PartitionedSolution]),
+
+            %CHECK IF SUDOKU IS SOLVEABLE
+            Possible = checkPossibility(NextPossibleSteps),
+            %io:format("Possible? ~p ~n",[Possible]),
+
+            IsDone = megoldase({isqrt(Fullsize),NextMatrix},PartitionedSolution),
+            %io:format("DONE? ~p ~n",[IsDone]),
+
+            if (IsDone) ->
+                NewsolutionAdded = SolutionsArray ++ PartitionedSolution,
+                NewsolutionAdded;
+
+                % Return = [NewsolutionAdded,{BackUpArray,BackUpIndex,BackUpMatrix,BackUpPossibleSteps,BackUpSimpleList,BackUpCounter}],
+                % Return;
+            (1==1) ->
+                if (Possible) ->
+                    Response = solveSudokuV2(Fullsize,NextMatrix,NextPossibleSteps,NextSimpleList,Counter+1,SolutionsArray,BackUpArray,BackUpIndex,BackUpMatrix,BackUpPossibleSteps,BackUpSimpleList,BackUpCounter),
+                    if (is_list(Response)) ->
+                        Response;
+                        % %io:format("LIST: ~p ~n",[Response]),
+                        % [AddSolutionX|BackUps] = Response, 
+                        % {Try2Array,Try2Index,Try2Matrix,Try2PossibleSteps,Try2SimpleList,Try2Counter} = hd(BackUps),
+
+                        % NewPossibleSteps2 = lists:sublist(Try2PossibleSteps,Try2Index-1) ++ [Try2Array] ++ lists:nthtail(Try2Index,Try2PossibleSteps),
+                        % solveSudokuV2(Fullsize,Try2Matrix,NewPossibleSteps2,Try2SimpleList,Try2Counter,AddSolutionX,BackUpArray,BackUpIndex,BackUpMatrix,BackUpPossibleSteps,BackUpSimpleList,BackUpCounter);2Matrix,NewPossibleSteps2,Try2SimpleList,Try2Counter,AddSolutionX,BackUpArray,BackUpIndex,BackUpMatrix,BackUpPossibleSteps,BackUpSimpleList,BackUpCounter);
+                    (1==1) ->
+                        {TryArray,TryIndex,TryMatrix,TryPossibleSteps,TrySimpleList,TryCounter} = Response,
+
+                        NewPossibleSteps = lists:sublist(TryPossibleSteps,TryIndex-1) ++ [TryArray] ++ lists:nthtail(TryIndex,TryPossibleSteps),
+                        solveSudokuV2(Fullsize,TryMatrix,NewPossibleSteps,TrySimpleList,TryCounter,SolutionsArray,BackUpArray,BackUpIndex,BackUpMatrix,BackUpPossibleSteps,BackUpSimpleList,BackUpCounter)
+                    end;
+                (1==1) ->                
+                    {BackUpArray,BackUpIndex,BackUpMatrix,BackUpPossibleSteps,BackUpSimpleList,BackUpCounter}
+                end
+            end
+        
+        end
+        
     end.
+
+removeDoubleBrackets([],Result) ->Result;
+removeDoubleBrackets([[H|_]|T],Result) ->
+    NewRes = Result ++ [H],
+    removeDoubleBrackets(T,NewRes).
+
+addFirstPossibleValue([],[],Result, BackArr, _, Index, _) -> {Result,BackArr,Index};
+addFirstPossibleValue([],_,Result, BackArr, _, Index, _) -> {Result,BackArr,Index};
+addFirstPossibleValue(_,[],Result, BackArr, _, Index, _) -> {Result,BackArr,Index};
+addFirstPossibleValue([SolH|SolT], [PossH|PossT], Result, BackArr, Smallest, Index, MaxLength) ->
+    PossibNumber = length(PossH),
+    if (PossibNumber == Smallest) ->
+            [TheValue|NewBackup] = PossH,
+            AlreadyContained = listFind(TheValue,SolH),
+            if (AlreadyContained) ->
+                NewRes = Result ++ [SolH],
+                addFirstPossibleValue(SolT,PossT,NewRes, BackArr, Smallest, Index, MaxLength+1);
+            (1==1) ->
+                Appended = append(SolH,[TheValue]),
+                NewRes = Result ++ [Appended],
+                addFirstPossibleValue(SolT,PossT,NewRes, NewBackup, 999, MaxLength, MaxLength+1)
+            end;
+    (1==1) ->
+        NewRes = Result ++ [SolH],
+        addFirstPossibleValue(SolT,PossT,NewRes, BackArr, Smallest, Index, MaxLength+1)
+    end.
+
+
+findSmallest([],Smallest) -> Smallest;
+findSmallest([H|T],Smallest) ->
+    Size = length(H),
+    if ( Size < Smallest ) ->
+        if ( Size > 1 ) ->
+            NewSmallest = Size,
+            findSmallest(T,NewSmallest);
+        (1==1) ->
+            findSmallest(T,Smallest)
+        end;
+    (1==1) ->
+        findSmallest(T,Smallest)
+    end.
+
+checkPossibility([]) -> true;
+checkPossibility([H|T])  ->
+    Size = length(H),
+    if ( Size == 0 ) ->
+        false;
+    (1==1) ->
+        checkPossibility(T)
+    end.
+
 
 createPartition([],_,_,Result,_) -> Result;
 createPartition([H|T],Size,TempResult,Result,Counter) ->
@@ -109,7 +258,7 @@ calculatePossibilites(SudokuSize,FullMx,[_|T],Row,Col,Result) ->
 addPossibleSteps([],[],Result) -> Result;
 addPossibleSteps([],_,Result) -> Result;
 addPossibleSteps(_,[],Result) -> Result;
-addPossibleSteps([[SolH|_]|SolT],[PossH|PossT],Result) ->
+addPossibleSteps([SolH|SolT],[PossH|PossT],Result) ->
     PossibNumber = length(PossH),
     if (PossibNumber == 1) ->
             [TheValue|_] = PossH,
@@ -118,7 +267,8 @@ addPossibleSteps([[SolH|_]|SolT],[PossH|PossT],Result) ->
                 NewRes = Result ++ [SolH],
                 addPossibleSteps(SolT,PossT,NewRes);
             (1==1) ->
-                NewRes = Result ++ [SolH ++ [TheValue]],
+                Appended = append(SolH,[TheValue]),
+                NewRes = Result ++ [Appended],
                 addPossibleSteps(SolT,PossT,NewRes)
             end;
     (1==1) ->
@@ -140,5 +290,25 @@ isqrt(Q,R,X) when Q < R ->
     R1 = (R+Q) div 2,
     isqrt(X div R1, R1, X);
 isqrt(_, R, _) -> R.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
