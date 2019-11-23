@@ -1,10 +1,10 @@
 -module(sudoku).
 -author('vicsuka@gmail.com').
 -vsn('2019-11-17').
--export([sudoku/1,calculatePossibilites/6,addFirstPossibleValue/7,addPossibleSteps/3,removeDoubleBrackets/2,multiplyList/4,createPartition/5]).
+-export([sudoku/1,addFirstPossibleValue/7,addPossibleSteps/3,removeDoubleBrackets/2,multiplyList/4,createPartition/5]).
 
 -import(khf1,[feldarabolasa/2]).
--import(khf2,[ertekek/2]).
+-import(khf2,[ertekek/6]).
 -import(khf3,[megoldase/2]).
 
 -import(string,[len/1,concat/2,chr/2,substr/3,str/2,to_lower/1,to_upper/1]).
@@ -32,7 +32,13 @@ solveProblems(Matrix, []) ->
 
 solveSudokuV3(Fullsize,Matrix,[],[],Counter,[]) ->
     SimpleMatrixList = feldarabolasa(Matrix,{1,1}),
-    PossibleSteps = calculatePossibilites(isqrt(Fullsize),Matrix,SimpleMatrixList,1,1,[]),
+
+    Rows = feldarabolasa(Matrix, {1,Fullsize}),
+    Cols = feldarabolasa(Matrix, {Fullsize,1}),
+    Cells = feldarabolasa(Matrix, {isqrt(Fullsize),isqrt(Fullsize)}),
+    FullLists = feldarabolasa(Matrix,{1,1}),
+
+    PossibleSteps = calculatePossibilites(isqrt(Fullsize),Matrix,SimpleMatrixList,1,1,[],Rows,Cols,Cells,FullLists),
     % SimpleList = addPossibleSteps(SimpleMatrixList, [[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[]],[]),
     % %io:format("Possible: ~p ~n",[PossibleSteps]),
     NoBrackets = removeDoubleBrackets(SimpleMatrixList,[]),
@@ -86,8 +92,12 @@ solveSudokuV3(Fullsize,Matrix,PossibleSteps,SimpleMatrixList,Counter,Solution) -
             NextMatrix = createPartition(NextSimpleList,Fullsize,[],[],1),
             %io:format("NextMatrix: ~p ~n",[NextMatrix]),
 
+            Rows = feldarabolasa(NextMatrix, {1,Fullsize}),
+            Cols = feldarabolasa(NextMatrix, {Fullsize,1}),
+            Cells = feldarabolasa(NextMatrix, {isqrt(Fullsize),isqrt(Fullsize)}),
+            FullLists = feldarabolasa(NextMatrix,{1,1}),
             %NEXT POSSIBLE MOVES
-            NextPossibleSteps = calculatePossibilites(isqrt(Fullsize),NextMatrix,NextSimpleList,1,1,[]),
+            NextPossibleSteps = calculatePossibilites(isqrt(Fullsize),NextMatrix,NextSimpleList,1,1,[],Rows,Cols,Cells,FullLists),
             %io:format("NextPossibleSteps: ~p ~n",[NextPossibleSteps]),
 
             %CURRENT SOLUTION FOR CHECKING
@@ -143,7 +153,11 @@ doBranching(Fullsize,[CurrentList|NextList], Results,Counter) ->
     %io:format("NextMatrix: ~p ~n",[NextMatrix]),
 
     %NEXT POSSIBLE MOVES
-    NextPossibleSteps = calculatePossibilites(isqrt(Fullsize),NextMatrix,CurrentList,1,1,[]),
+    Rows = feldarabolasa(NextMatrix, {1,Fullsize}),
+    Cols = feldarabolasa(NextMatrix, {Fullsize,1}),
+    Cells = feldarabolasa(NextMatrix, {isqrt(Fullsize),isqrt(Fullsize)}),
+    FullLists = feldarabolasa(NextMatrix,{1,1}),
+    NextPossibleSteps = calculatePossibilites(isqrt(Fullsize),NextMatrix,CurrentList,1,1,[],Rows,Cols,Cells,FullLists),
     %io:format("NextPossibleSteps: ~p ~n",[NextPossibleSteps]),
 
     %CURRENT SOLUTION FOR CHECKING
@@ -321,13 +335,13 @@ addToSolution(SudokuSize,[PossH|PossT],Result,Counter)->
     end.
 
         
-calculatePossibilites(_,_,[],_,_,Result) -> Result;
-calculatePossibilites(SudokuSize,FullMx,[_|T],Row,Col,Result) ->
-    NewResult = Result ++ [ertekek({SudokuSize,FullMx},{Row,Col})],
+calculatePossibilites(_,_,[],_,_,Result,_,_,_,_) -> Result;
+calculatePossibilites(SudokuSize,FullMx,[_|T],Row,Col,Result,Allrows,Allcols,Allsubcells,SimpleList) ->
+    NewResult = Result ++ [ertekek({SudokuSize,FullMx},{Row,Col},Allrows,Allcols,Allsubcells,SimpleList)],
     if (Col == length(FullMx)) ->
-        calculatePossibilites(SudokuSize,FullMx,T,Row+1,1,NewResult);
+        calculatePossibilites(SudokuSize,FullMx,T,Row+1,1,NewResult,Allrows,Allcols,Allsubcells,SimpleList);
     (1==1) ->
-        calculatePossibilites(SudokuSize,FullMx,T,Row,Col+1,NewResult)
+        calculatePossibilites(SudokuSize,FullMx,T,Row,Col+1,NewResult,Allrows,Allcols,Allsubcells,SimpleList)
     end.
 
 addPossibleSteps([],[],Result) -> Result;

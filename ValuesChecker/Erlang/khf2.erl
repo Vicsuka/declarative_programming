@@ -1,7 +1,7 @@
 -module(khf2).
 -author('vicsuka@gmail.com').
 -vsn('2019-11-17').
--export([ertekek/2]).
+-export([ertekek/6]).
 -import(string,[len/1,concat/2,chr/2,substr/3,str/2,to_lower/1,to_upper/1]).
 -import(lists,[sublist/2,reverse/1,filter/2,append/1,flatlength/1,nth/2]).
 -import(khf1,[feldarabolasa/2]).
@@ -15,19 +15,14 @@
 %% koordinátájú mezőjében megengedett értékek listája.
 
 
-ertekek(Proposal, Field)-> checkField(Proposal,Field).
+ertekek(Proposal, Field,Allrows,Allcols,Allsubcells,SimpleList)-> checkField(Proposal,Field,Allrows,Allcols,Allsubcells,SimpleList).
 
-checkField(Proposal,Field) ->
+checkField(Proposal,Field,Allrows,Allcols,Allsubcells,SimpleList) ->
     {SudokuSize,_} = Proposal,
     {_,ProposalMatrix} = Proposal,
     Fullsize = length(ProposalMatrix),
     {FieldRow,_} = Field,
     {_,FieldCol} = Field,
-
-    Allrows = feldarabolasa(ProposalMatrix, {1,Fullsize}),
-    Allcols = feldarabolasa(ProposalMatrix, {Fullsize,1}),
-    Allsubcells = feldarabolasa(ProposalMatrix, {SudokuSize,SudokuSize}),
-    SimpleList = feldarabolasa(ProposalMatrix,{1,1}),
 
     RowConstraint = getRowNumbers(Allrows,FieldRow,Fullsize),
     % io:format("RowConstraint: ~p ~n", [RowConstraint]),
