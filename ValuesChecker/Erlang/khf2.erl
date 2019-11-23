@@ -23,15 +23,21 @@ checkField(Proposal,Field) ->
     Fullsize = length(ProposalMatrix),
     {FieldRow,_} = Field,
     {_,FieldCol} = Field,
-    RowConstraint = getRowNumbers(ProposalMatrix,FieldRow,Fullsize),
+
+    Allrows = feldarabolasa(ProposalMatrix, {1,Fullsize}),
+    Allcols = feldarabolasa(ProposalMatrix, {Fullsize,1}),
+    Allsubcells = feldarabolasa(ProposalMatrix, {SudokuSize,SudokuSize}),
+    SimpleList = feldarabolasa(ProposalMatrix,{1,1}),
+
+    RowConstraint = getRowNumbers(Allrows,FieldRow,Fullsize),
     % io:format("RowConstraint: ~p ~n", [RowConstraint]),
-    ColConstraint = getColNumbers(ProposalMatrix,FieldCol,Fullsize),
+    ColConstraint = getColNumbers(Allcols,FieldCol,Fullsize),
     % io:format("ColConstraint: ~p ~n", [ColConstraint]),
-    SubConstraint = getSubNumbers(ProposalMatrix,SudokuSize,FieldRow,FieldCol),
+    SubConstraint = getSubNumbers(Allsubcells,SudokuSize,FieldRow,FieldCol),
     % io:format("SubConstraint: ~p ~n", [SubConstraint]),
-    ParityConstraints = checkParity(ProposalMatrix,FieldRow,FieldCol,Fullsize),
+    ParityConstraints = checkParity(SimpleList,FieldRow,FieldCol,Fullsize),
     % io:format("ParityConstraints: ~p ~n", [ParityConstraints]),
-    NumberConstraint = checkNumber(ProposalMatrix,FieldRow,FieldCol,Fullsize),
+    NumberConstraint = checkNumber(SimpleList,FieldRow,FieldCol,Fullsize),
     % io:format("NumberConstraint: ~p ~n", [NumberConstraint]),
 
     Possibilites = generateAllPossibleValues(Fullsize,1,[]),
@@ -60,17 +66,17 @@ checkField(Proposal,Field) ->
 
 
 getRowNumbers(Matrix,RowNumber,Size) ->
-    Allrows = feldarabolasa(Matrix, {1,Size}),
+    Allrows = Matrix,
     Myrow = lists:nth(RowNumber, Allrows),
     extractNumbersFromList(Myrow,[]).
 
 getColNumbers(Matrix,ColNumber,Size) ->
-    Allcols = feldarabolasa(Matrix, {Size,1}),
+    Allcols = Matrix,
     Mycol = lists:nth(ColNumber, Allcols),
     extractNumbersFromList(Mycol,[]).
 
 getSubNumbers(Matrix,SudokuSize,RowN,ColN) ->
-    Allmx = feldarabolasa(Matrix, {SudokuSize,SudokuSize}),
+    Allmx = Matrix,
     SubmxNumber = ((RowN - 1) div SudokuSize) * SudokuSize + ((ColN - 1) div SudokuSize) + 1,
     Mymx = lists:nth(SubmxNumber, Allmx),
     extractNumbersFromList(Mymx,[]).
@@ -134,7 +140,7 @@ generateExactValues(Size, Number, CurrentValue, Output) ->
     end.
 
 checkParity(Matrix,RowN,ColN,Size) ->
-    SimpleProposalList = feldarabolasa(Matrix,{1,1}),
+    SimpleProposalList = Matrix,
     Myfield =  lists:nth(((RowN-1) * Size + ColN) , SimpleProposalList),
     % io:format("Constraint field: ~p ~n", [Myfield]),
     [List|_] = Myfield,
@@ -157,7 +163,7 @@ checkParity(Matrix,RowN,ColN,Size) ->
     end.
 
 checkNumber(Matrix,RowN,ColN,Size) ->
-    SimpleProposalList = feldarabolasa(Matrix,{1,1}),
+    SimpleProposalList = Matrix,
     Myfield =  lists:nth(((RowN-1) * Size + ColN) , SimpleProposalList),
     [List|_] = Myfield,
 
