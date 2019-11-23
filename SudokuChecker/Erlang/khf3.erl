@@ -191,7 +191,7 @@ odd(X) when X > 0 -> not even(X).
 
 checkListForNumber([]) -> false;
 checkListForNumber([H|T]) ->
-    if (H < 16 ) ->
+    if (H < 101 ) ->
         if (H > 0 ) ->
             true;
         (1==1) ->
@@ -204,7 +204,7 @@ checkListForNumber([H|T]) ->
 
 getNumberFromList([]) -> 0;
 getNumberFromList([H|T]) ->
-    if (H < 16 ) ->
+    if (H < 101 ) ->
         if (H > 0 ) ->
             % io:format("RETURNING: ~p ~n", [H]),
             H;
