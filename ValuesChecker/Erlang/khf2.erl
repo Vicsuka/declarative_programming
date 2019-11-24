@@ -32,6 +32,15 @@ checkField(Proposal,Field,Allrows,Allcols,Allsubcells,SimpleList) ->
     % io:format("SubConstraint: ~p ~n", [SubConstraint]),
     ParityConstraints = checkParity(SimpleList,FieldRow,FieldCol,Fullsize),
     % io:format("ParityConstraints: ~p ~n", [ParityConstraints]),
+
+    NeighBorConstraints = checkNeighborsCONSTRAINT(SimpleList,FieldRow,FieldCol,Fullsize),
+    % io:format("NeighBorConstraints: ~p ~n", [NeighBorConstraints]),
+
+    % {2, [[   [2],          [],         [e],          []],
+            % [    [],         [s],          [],         [o]],
+            % [    [],          [],         [1],          []],
+            % [    [],         [w],          [],          []]]}, {1,4}).
+
     NumberConstraint = checkNumber(SimpleList,FieldRow,FieldCol,Fullsize),
     % io:format("NumberConstraint: ~p ~n", [NumberConstraint]),
 
@@ -44,19 +53,144 @@ checkField(Proposal,Field,Allrows,Allcols,Allsubcells,SimpleList) ->
             ColConstraint1 = ColConstraint -- NumberConstraint,
             SubConstraint1 = SubConstraint -- NumberConstraint,
             ParityConstraint1 = ParityConstraints -- NumberConstraint,
+            NeighBorConstraints1 = NeighBorConstraints -- NumberConstraint,
 
             NewResult11 = NumberConstraint -- RowConstraint1,
             NewResult22 = NewResult11 -- ColConstraint1,
             NewResult33 = NewResult22 -- SubConstraint1,
             NewResult44 = NewResult33 -- ParityConstraint1,
-            NewResult44;
+            NewResult55 = NewResult44 -- NeighBorConstraints1,
+            NewResult55;
         (1==1) ->
             NewResult = Possibilites -- RowConstraint,
             NewResult2 = NewResult -- ColConstraint,
             NewResult3 = NewResult2 -- SubConstraint,
             NewResult4 = NewResult3 -- ParityConstraints,
-            NewResult4
+            NewResult5 = NewResult4 -- NeighBorConstraints,
+            NewResult5
     end.
+
+checkNeighborsCONSTRAINT(Matrix,RowN,ColN,Size) ->
+    SimpleProposalList = Matrix,
+    Myfield =  lists:nth(((RowN-1) * Size + ColN) , SimpleProposalList),
+
+
+    [List|_] = Myfield,
+
+    CheckSouth = listFind(s,List),
+    CheckWest = listFind(w,List),
+
+    if (CheckSouth) ->
+        if (RowN == Size) ->
+            generateAllPossibleValues(Size, 1, []);
+        (1==1) ->
+            if (CheckWest) ->
+                if (ColN == 1) ->
+                    generateAllPossibleValues(Size, 1, []);
+                (1==1) ->
+                    %CHECK BOTH
+                    WestField = lists:nth(((RowN-1) * Size + ColN - 1) , SimpleProposalList),
+                    SouthField = lists:nth(((RowN-1) * Size + ColN + Size) , SimpleProposalList),
+
+                    [WestList|_] = WestField,
+                    [SouthList|_] = SouthField,
+
+                    WestNumberC = checkListForNumber(WestField),
+                    SouthNumberC = checkListForNumber(SouthList),
+
+                    if (SouthNumberC) ->
+                        SouthNumber = getNumberFromList(SouthList),
+                        if (WestNumberC) ->
+                            WestNumber = getNumberFromList(WestList),
+                            %CHECK BOTH NUMBER
+                            IsSouthEven = even(SouthNumber),
+                            IsWestEven = even(WestNumber),
+                            if (IsSouthEven) ->
+                                if (IsWestEven) ->
+                                    generateEvenValues(Size,1,[]);
+                                (1==1) ->
+                                    generateAllPossibleValues(Size, 1, []) 
+                                end;  
+                            (1==1) ->
+                                if (IsWestEven) ->
+                                    generateAllPossibleValues(Size,1,[]);
+                                (1==1) ->
+                                    generateOddValues(Size, 1, [])  
+                                end 
+                            end;
+                        (1==1) ->
+                            %SOUTH NUMBER
+                            IsSouthEven = even(SouthNumber),
+                            if (IsSouthEven) ->
+                                generateEvenValues(Size,1,[]);
+                            (1==1) ->
+                                generateOddValues(Size,1,[])  
+                            end                            
+                        end;   
+                    (1==1) -> 
+                        if (WestNumberC) ->
+                            WestNumber = getNumberFromList(WestList),
+                            %WEST NUMBER
+                            IsWestEven = even(WestNumber),
+                            if (IsWestEven) ->
+                                generateEvenValues(Size,1,[]);
+                            (1==1) ->
+                                generateOddValues(Size,1,[])  
+                            end;  
+                        (1==1) ->
+                            []
+                        end
+                    end
+
+                end;
+            (1==1) ->
+                %CHECK SOUTH
+                SouthField = lists:nth(((RowN-1) * Size + ColN + Size) , SimpleProposalList),
+                [SouthList|_] = SouthField,
+                SouthNumberC = checkListForNumber(SouthList),
+
+                if (SouthNumberC) ->
+                    SouthNumber = getNumberFromList(SouthList),
+                    %SOUTH NUMBER
+                    IsSouthEven = even(SouthNumber),
+                    if (IsSouthEven) ->
+                        generateEvenValues(Size,1,[]);
+                    (1==1) ->
+                        generateOddValues(Size,1,[])  
+                    end;                              
+                (1==1) ->
+                    []
+                end
+            end
+        end;            
+    (1==1) ->
+        if (CheckWest) ->
+            if (ColN == 1) ->
+                generateAllPossibleValues(Size, 1, []);
+            (1==1) ->
+                %CHECK WEST
+                % WestField = lists:nth(((RowN-1) * Size + ColN - 1) , SimpleProposalList),
+                % [WestList|_] = WestField,
+                % WestNumberC = checkListForNumber(WestList),
+
+                % if (WestNumberC) ->
+                %     WestNumber = getNumberFromList(WestList),
+                %     %WEST NUMBER
+                %     IsWestEven = even(WestNumber),
+                %     if (IsWestEven) ->
+                %         generateEvenValues(Size,1,[]);
+                %     (1==1) ->
+                %         generateOddValues(Size,1,[])  
+                %     end;                              
+                % (1==1) ->
+                    []
+                % end
+            end;
+        (1==1) ->
+            []
+        end
+    end.
+
 
 
 
@@ -174,7 +308,7 @@ checkNumber(Matrix,RowN,ColN,Size) ->
 
 checkListForNumber([]) -> false;
 checkListForNumber([H|T]) ->
-    if (H < 16) ->
+    if (H < 101) ->
         if (H > 0) ->
             true;
         (1==1) ->
@@ -186,7 +320,7 @@ checkListForNumber([H|T]) ->
 
 getNumberFromList([]) -> 0;
 getNumberFromList([H|T]) ->
-    if (H < 16 ) ->
+    if (H < 101 ) ->
         if (H > 0 ) ->
             H;
         (1==1) ->
