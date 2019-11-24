@@ -24,11 +24,152 @@
 sudoku({_,Matrix}) -> solveProblems(Matrix, []).
 
 solveProblems(Matrix, []) ->
-    
+    % io:format("Matrix: ~p ~n",[Matrix]),
     Fullsize = length(Matrix),
     ReSolution = solveSudokuV3(Fullsize,Matrix,[],[],1,[]),
+    % io:format("ReSolution: ~p ~n",[ReSolution]),
     Done = createPartition(ReSolution, Fullsize,[],[],1),
+    % io:format("Done: ~p ~n",[length(Done)]),
     Done.
+
+
+solveSudokuV4(Fullsize,Matrix,[],Counter,[],_,_,_,_) ->
+    SimpleMatrixList = feldarabolasa(Matrix,{1,1}),
+
+    NoBrackets = removeDoubleBrackets(SimpleMatrixList,[]),
+
+    solveSudokuV4(Fullsize,Matrix,NoBrackets,Counter,[],1,1,[],[]);
+
+solveSudokuV4(Fullsize,Matrix,SimpleMatrixList,Counter,Solution,Row,Col,ToRemoveList,MyRemoveList) ->
+    if (Counter > 100) ->
+        io:format("COULD NOT SOLVE ~n");
+    (1==1) ->  
+        AllRows = feldarabolasa(Matrix, {1,Fullsize}),
+        AllCols = feldarabolasa(Matrix, {Fullsize,1}),
+        AllCells = feldarabolasa(Matrix, {isqrt(Fullsize),isqrt(Fullsize)}),
+        FullLists = feldarabolasa(Matrix,{1,1}),
+
+        io:format("SimpleMatrixList: ~p ~n",[SimpleMatrixList]),
+
+        {NewSimpleList,AddToRemoved} = addNextNumber(isqrt(Fullsize),Matrix,SimpleMatrixList,Row,Col,[],AllRows,AllCols,AllCells,FullLists,1,1,MyRemoveList,0),
+
+        io:format("NewSimpleList: ~p ~n",[NewSimpleList]),
+        io:format("AddToRemoved: ~p ~n",[AddToRemoved]),
+
+        if (NewSimpleList == SimpleMatrixList) ->
+            {ToRemoveList};
+        (1==1) ->
+            io:format("NewSimpleList: ~p ~n",[NewSimpleList]),
+            NextMatrix = createPartition(NewSimpleList,Fullsize,[],[],1),
+
+            ThisSolution = addToSolutionFromSimpleList(isqrt(Fullsize),NewSimpleList,[]),
+            io:format("ThisSolution: ~p ~n",[ThisSolution]),
+            PartitionedSolution = createPartition(ThisSolution,Fullsize,[],[],1),
+            %io:format("PartitionedSolution: ~p ~n",[PartitionedSolution]),
+
+            %LOGGING
+            io:format("Current SOLUTION: ~p ~n",[PartitionedSolution]),
+
+            IsDone = megoldase({isqrt(Fullsize),NextMatrix},PartitionedSolution),
+            % io:format("DONE? ~p ~n",[IsDone]),
+
+            if (IsDone) ->
+                % io:format("PartitionedSolution: ~p ~n",[PartitionedSolution]),
+                [PartitionedSolution,ToRemoveList];
+            (1==1) ->
+                BackRemoveList = MyRemoveList ++ [AddToRemoved],
+                if (Col == length(Matrix)) ->
+                    %%%
+                    Response = solveSudokuV4(Fullsize,NextMatrix,NewSimpleList,Counter+1,Solution,Row+1,1,BackRemoveList,[]),
+
+                    if (is_list(Response)) ->
+                        [Solution|[Solved|_]] = Response,
+                        io:format("DONE: ~p ~n",[Solution]),
+                        {Solved};
+                    (1==1) ->                        
+                        {TempRemove} = Response,
+                        io:format("REMOVELIST ADD: ~p ~n",[TempRemove]),
+                        NewMyRemoveList = MyRemoveList ++ TempRemove,
+                        io:format("NewMyRemoveList: ~p ~n",[NewMyRemoveList]),
+                        solveSudokuV4(Fullsize,Matrix,SimpleMatrixList,Counter+1,Solution,Row,Col,ToRemoveList,NewMyRemoveList)
+                    end;                    
+                (1==1) ->
+                    %%%
+                    Response = solveSudokuV4(Fullsize,NextMatrix,NewSimpleList,Counter+1,Solution,Row,Col+1,BackRemoveList,[]),
+
+                    if (is_list(Response)) ->
+                        [SolutionMx|[Solved|_]] = Response,
+                        io:format("DONE: ~p ~n",[SolutionMx]),
+                        {Solved};
+                    (1==1) ->                        
+                        {TempRemove} = Response,
+                        io:format("REMOVELIST ADD: ~p ~n",[TempRemove]),
+                        NewMyRemoveList = MyRemoveList ++ TempRemove,
+                        io:format("NewMyRemoveList: ~p ~n",[NewMyRemoveList]),
+                        solveSudokuV4(Fullsize,Matrix,SimpleMatrixList,Counter+1,Solution,Row,Col,ToRemoveList,NewMyRemoveList)
+                    end
+                end
+            end  
+        end    
+    end.
+
+addToSolutionFromSimpleList(_,[],Result) -> Result;
+addToSolutionFromSimpleList(SudokuSize,[H|T],Result)->
+    CheckNumber = checkListForNumber(H),
+    if (CheckNumber) ->
+        Number = getNumberFromList(H),
+        NewRes = Result ++ [Number],
+        addToSolutionFromSimpleList(SudokuSize,T,NewRes);
+    (1==1) -> 
+        NewRes = Result ++ [1],
+        addToSolutionFromSimpleList(SudokuSize,T,NewRes)
+    end.
+
+
+addNextNumber(_,_,[],_,_,Result,_,_,_,_,_,_,_,AddRemoved) -> {Result,AddRemoved};
+addNextNumber(SudokuSize,FullMx,[H|T],Row,Col,Result,Allrows,Allcols,Allsubcells,SimpleList,CurrRow,CurrCol,ToRemove,AddRemoved) ->
+    if (CurrRow == Row) ->
+        if (CurrCol == Col) ->
+            NewValue = ertekek({SudokuSize,FullMx},{Row,Col},Allrows,Allcols,Allsubcells,SimpleList) -- ToRemove,
+            io:format("POSSIBLE VALUES: ~p ~n",[NewValue]),
+            NewSize = length(NewValue),
+            if (NewSize > 0) ->
+                NewRemoved = hd(NewValue),
+                Appended = append(H,[hd(NewValue)]),
+                NewRes = Result ++ [Appended],                
+                if (CurrCol == length(FullMx)) ->
+                    addNextNumber(SudokuSize,FullMx,T,Row,Col,NewRes,Allrows,Allcols,Allsubcells,SimpleList,CurrRow+1,1,ToRemove,NewRemoved);
+                (1==1) ->
+                    addNextNumber(SudokuSize,FullMx,T,Row,Col,NewRes,Allrows,Allcols,Allsubcells,SimpleList,CurrRow,CurrCol+1,ToRemove,NewRemoved)
+                end;
+            (1==1) ->
+                NewRes = Result ++ [H],
+                if (CurrCol == length(FullMx)) ->
+                    addNextNumber(SudokuSize,FullMx,T,Row,Col,NewRes,Allrows,Allcols,Allsubcells,SimpleList,CurrRow+1,1,ToRemove,AddRemoved);
+                (1==1) ->
+                    addNextNumber(SudokuSize,FullMx,T,Row,Col,NewRes,Allrows,Allcols,Allsubcells,SimpleList,CurrRow,CurrCol+1,ToRemove,AddRemoved)
+                end
+            end;
+        (1==1) ->
+            NewRes = Result ++ [H],
+            if (CurrCol == length(FullMx)) ->
+                addNextNumber(SudokuSize,FullMx,T,Row,Col,NewRes,Allrows,Allcols,Allsubcells,SimpleList,CurrRow+1,1,ToRemove,AddRemoved);
+            (1==1) ->
+                addNextNumber(SudokuSize,FullMx,T,Row,Col,NewRes,Allrows,Allcols,Allsubcells,SimpleList,CurrRow,CurrCol+1,ToRemove,AddRemoved)
+            end
+        end;
+    (1==1) ->
+        NewRes = Result ++ [H],
+        if (CurrCol == length(FullMx)) ->
+            addNextNumber(SudokuSize,FullMx,T,Row,Col,NewRes,Allrows,Allcols,Allsubcells,SimpleList,CurrRow+1,1,ToRemove,AddRemoved);
+        (1==1) ->
+            addNextNumber(SudokuSize,FullMx,T,Row,Col,NewRes,Allrows,Allcols,Allsubcells,SimpleList,CurrRow,CurrCol+1,ToRemove,AddRemoved)
+        end
+    end.
+    
+    
+
+
 
 solveSudokuV3(Fullsize,Matrix,[],[],Counter,[]) ->
     SimpleMatrixList = feldarabolasa(Matrix,{1,1}),
@@ -40,7 +181,7 @@ solveSudokuV3(Fullsize,Matrix,[],[],Counter,[]) ->
 
     PossibleSteps = calculatePossibilites(isqrt(Fullsize),Matrix,SimpleMatrixList,1,1,[],Rows,Cols,Cells,FullLists),
     % SimpleList = addPossibleSteps(SimpleMatrixList, [[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[]],[]),
-    % %io:format("Possible: ~p ~n",[PossibleSteps]),
+    %io:format("Possible: ~p ~n",[PossibleSteps]),
     NoBrackets = removeDoubleBrackets(SimpleMatrixList,[]),
 
     solveSudokuV3(Fullsize,Matrix,PossibleSteps,NoBrackets,Counter,[]);
@@ -60,11 +201,14 @@ solveSudokuV3(Fullsize,Matrix,PossibleSteps,SimpleMatrixList,Counter,Solution) -
         % io:format("SURE VALUES: ~p ~n",[NextSimpleList]),
 
         if (NextSimpleList == SimpleMatrixList) ->
-
+            % io:format("WE ARE STARTING A BRANCH! ~n"),
             %FIND BEST FIELD (SMALLEST POSSIBLE STEPS BIGGER THAN 1)
-            Smallest = findSmallest(PossibleSteps,16),
-            %io:format("Smallest: ~p ~n",[Smallest]),
-            if (Smallest > 15) ->
+            Smallest = findSmallest(PossibleSteps,101),
+            % io:format("Smallest: ~p ~n",[Smallest]),
+            % io:format("Possible: ~p ~n",[Matrix]),
+
+            if (Smallest > 100) ->
+                % io:format("Possible: ~p ~n",[PossibleSteps]),
                 {Fullsize,Matrix};
             (1==1) ->
 
@@ -80,15 +224,23 @@ solveSudokuV3(Fullsize,Matrix,PossibleSteps,SimpleMatrixList,Counter,Solution) -
                 % io:format("AdvancedSimpleLists: ~p ~n",[AdvancedSimpleLists]),
 
 
-                SolutionArray = doBranching(Fullsize,AdvancedSimpleLists,[],Counter),
+                SolutionArray = doBranching(PossibleSteps,Fullsize,AdvancedSimpleLists,[],Counter),
                 % io:format("SolutionArray SIZE: ~p ~n",[length(SolutionArray)]),
-                % io:format("SolutionArray: ~p ~n",[SolutionArray]),
-                SolutionArray
+                if (is_list(SolutionArray)) ->
+                    % io:format("SolutionArray: ~p ~n",[SolutionArray]),
+                    SolutionArray;
+                (1==1) ->
+                    []
+                end
+                % io:format("DONE BRANCH: ~p ~n",[Counter]),
+                
             end;
             
         (1==1) ->
+            % io:format("WE DONT START A NEW BRANCH! ~n"),
             % io:format("ADDED VALUE%!!!% ~n"),
             %PARTITION CURRENT CONSTRAINT TO MATRIX
+            % io:format("NextSimpleList: ~p ~n",[NextSimpleList]),
             NextMatrix = createPartition(NextSimpleList,Fullsize,[],[],1),
             %io:format("NextMatrix: ~p ~n",[NextMatrix]),
 
@@ -97,20 +249,23 @@ solveSudokuV3(Fullsize,Matrix,PossibleSteps,SimpleMatrixList,Counter,Solution) -
             Cells = feldarabolasa(NextMatrix, {isqrt(Fullsize),isqrt(Fullsize)}),
             FullLists = feldarabolasa(NextMatrix,{1,1}),
             %NEXT POSSIBLE MOVES
-            NextPossibleSteps = calculatePossibilites(isqrt(Fullsize),NextMatrix,NextSimpleList,1,1,[],Rows,Cols,Cells,FullLists),
+            NextPossibleSteps = calculatePossibilites(PossibleSteps,isqrt(Fullsize),NextMatrix,NextSimpleList,1,1,[],Rows,Cols,Cells,FullLists),
             %io:format("NextPossibleSteps: ~p ~n",[NextPossibleSteps]),
 
             %CURRENT SOLUTION FOR CHECKING
             ThisSolution = addToSolution(isqrt(Fullsize),NextPossibleSteps,[],0),
+            % io:format("ThisSolution: ~p ~n",[ThisSolution]),
             PartitionedSolution = createPartition(ThisSolution,Fullsize,[],[],1),
             %io:format("PartitionedSolution: ~p ~n",[PartitionedSolution]),
 
             %LOGGING
-            % io:format("Current SOLUTION: ~p ~n",[PartitionedSolution]),
+            % io:format("Current NextMatrix: ~p ~n",[NextMatrix]),
+            % io:format("Current STEPS: ~p ~n",[NextPossibleSteps]),
+            
 
             %CHECK IF SUDOKU IS SOLVEABLE
             Possible = checkPossibility(NextPossibleSteps),
-            %io:format("Possible? ~p ~n",[Possible]),
+            % io:format("Possible? ~p ~n",[Possible]),
 
             IsDone = megoldase({isqrt(Fullsize),NextMatrix},PartitionedSolution),
             % io:format("DONE? ~p ~n",[IsDone]),
@@ -130,25 +285,14 @@ solveSudokuV3(Fullsize,Matrix,PossibleSteps,SimpleMatrixList,Counter,Solution) -
         
     end.
 
-% partitionByFullSize([],_, Res, _) ->Res;
-% partitionByFullSize([H|T],Size, Res, Tmp) ->
-%     [].
-
-% createPartition([],_,_,Result,_) -> Result;
-% createPartition([H|T],Size,TempResult,Result,Counter) ->
-%     if (Counter == Size) ->
-%         NewRes = TempResult++[H],
-%         NewFullRes = Result++[NewRes],
-%         createPartition(T,Size,[],NewFullRes,1);
-%     (1==1) ->
-%         NewRes = TempResult++[H],
-%         createPartition(T,Size,NewRes,Result,Counter+1)
-%     end.
 
 
-doBranching(_,[],Results,_) -> Results;
-doBranching(Fullsize,[CurrentList|NextList], Results,Counter) ->
+
+doBranching(_,_,[],Results,_) -> Results;
+doBranching(PossibleSteps,Fullsize,[CurrentList|NextList], Results,Counter) ->
+    % io:format("Current Branch: ~p ~n",[Counter]),
     %PARTITION CURRENT CONSTRAINT TO MATRIX
+    % io:format("CurrentList: ~p ~n",[CurrentList]),
     NextMatrix = createPartition(CurrentList,Fullsize,[],[],1),
     %io:format("NextMatrix: ~p ~n",[NextMatrix]),
 
@@ -157,26 +301,28 @@ doBranching(Fullsize,[CurrentList|NextList], Results,Counter) ->
     Cols = feldarabolasa(NextMatrix, {Fullsize,1}),
     Cells = feldarabolasa(NextMatrix, {isqrt(Fullsize),isqrt(Fullsize)}),
     FullLists = feldarabolasa(NextMatrix,{1,1}),
-    NextPossibleSteps = calculatePossibilites(isqrt(Fullsize),NextMatrix,CurrentList,1,1,[],Rows,Cols,Cells,FullLists),
+    NextPossibleSteps = calculatePossibilites(PossibleSteps,isqrt(Fullsize),NextMatrix,CurrentList,1,1,[],Rows,Cols,Cells,FullLists),
     %io:format("NextPossibleSteps: ~p ~n",[NextPossibleSteps]),
 
     %CURRENT SOLUTION FOR CHECKING
     ThisSolution = addToSolution(isqrt(Fullsize),NextPossibleSteps,[],0),
+    % io:format("ThisSolution: ~p ~n",[ThisSolution]),
     PartitionedSolution = createPartition(ThisSolution,Fullsize,[],[],1),
     % io:format("PartitionedSolution: ~p ~n",[PartitionedSolution]),
 
     %LOGGING
-    % io:format("Current SOLUTION: ~p ~n",[PartitionedSolution]),
+    % io:format("Current NextMatrix: ~p ~n",[NextMatrix]),
+    % io:format("Current STEPS: ~p ~n",[NextPossibleSteps]),
 
     %CHECK IF SUDOKU IS SOLVEABLE
     Possible = checkPossibility(NextPossibleSteps),
 
     IsDone = megoldase({isqrt(Fullsize),NextMatrix},PartitionedSolution),
-    % io:format("DONE? ~p ~n",[IsDone]),
+    % io:format("Possible? ~p ~n",[Possible]),
 
     if (IsDone) ->
         NewResults = Results ++ PartitionedSolution,
-        doBranching(Fullsize, NextList, NewResults,Counter);
+        doBranching(PossibleSteps,Fullsize, NextList, NewResults,Counter);
     (1==1) ->
         if (Possible) ->
             Solve = solveSudokuV3(Fullsize,NextMatrix,NextPossibleSteps,CurrentList,Counter+1,Results),
@@ -186,12 +332,12 @@ doBranching(Fullsize,[CurrentList|NextList], Results,Counter) ->
                 % io:format("ResponseSize: ~p ~n",[ResponseSize]),
                 if (ResponseSize > 1) ->
                     NewResults = Results ++ Solve,
-                    doBranching(Fullsize, NextList, NewResults,Counter);
+                    doBranching(PossibleSteps,Fullsize, NextList, NewResults,Counter);
                 (1==1) ->
-                    doBranching(Fullsize, NextList, Results,Counter)
+                    doBranching(PossibleSteps,Fullsize, NextList, Results,Counter)
                 end;
             (1==1) ->
-                doBranching(Fullsize, NextList, Results,Counter)
+                doBranching(PossibleSteps,Fullsize, NextList, Results,Counter)
             end;
         (1==1) ->                
             {Fullsize,NextMatrix}
@@ -334,7 +480,6 @@ addToSolution(SudokuSize,[PossH|PossT],Result,Counter)->
         addToSolution(SudokuSize,PossT,NewRes,Counter+1)
     end.
 
-        
 calculatePossibilites(_,_,[],_,_,Result,_,_,_,_) -> Result;
 calculatePossibilites(SudokuSize,FullMx,[_|T],Row,Col,Result,Allrows,Allcols,Allsubcells,SimpleList) ->
     NewResult = Result ++ [ertekek({SudokuSize,FullMx},{Row,Col},Allrows,Allcols,Allsubcells,SimpleList)],
@@ -343,6 +488,77 @@ calculatePossibilites(SudokuSize,FullMx,[_|T],Row,Col,Result,Allrows,Allcols,All
     (1==1) ->
         calculatePossibilites(SudokuSize,FullMx,T,Row,Col+1,NewResult,Allrows,Allcols,Allsubcells,SimpleList)
     end.
+
+calculatePossibilites(_,_,_,[],_,_,Result,_,_,_,_) -> Result;
+calculatePossibilites([PossH|PossT],SudokuSize,FullMx,[_|T],Row,Col,Result,Allrows,Allcols,Allsubcells,SimpleList) ->
+    PossSize = length(PossH),
+    if (PossSize > 1) ->
+
+        NewResult = Result ++ [ertekek({SudokuSize,FullMx},{Row,Col},Allrows,Allcols,Allsubcells,SimpleList)],
+        NewResultSize = length(NewResult),
+
+        if (NewResultSize == 2) ->
+            if (Col == length(FullMx)) ->
+                calculatePossibilites(PossT,SudokuSize,FullMx,T,Row+1,1,NewResult,Allrows,Allcols,Allsubcells,SimpleList);
+            (1==1) ->
+                calculatePossibilites(PossT,SudokuSize,FullMx,T,Row,Col+1,NewResult,Allrows,Allcols,Allsubcells,SimpleList)
+            end;
+        (1==1) ->
+            if (Col == length(FullMx)) ->
+                calculatePossibilites(PossT,SudokuSize,FullMx,T,Row+1,1,NewResult,Allrows,Allcols,Allsubcells,SimpleList);
+            (1==1) ->
+                calculatePossibilites(PossT,SudokuSize,FullMx,T,Row,Col+1,NewResult,Allrows,Allcols,Allsubcells,SimpleList)
+            end
+        end;
+
+        
+    (1==1) ->
+        NewResult = Result ++ [PossH],
+        if (Col == length(FullMx)) ->
+            calculatePossibilites(PossT,SudokuSize,FullMx,T,Row+1,1,NewResult,Allrows,Allcols,Allsubcells,SimpleList);
+        (1==1) ->
+            calculatePossibilites(PossT,SudokuSize,FullMx,T,Row,Col+1,NewResult,Allrows,Allcols,Allsubcells,SimpleList)
+        end
+    end.
+
+calculatePossibilites(_,_,_,[],_,_,Result,_,_,_,_,_,_) -> Result;
+calculatePossibilites([PossH|PossT],SudokuSize,FullMx,[_|T],Row,Col,Result,Allrows,Allcols,Allsubcells,SimpleList,AddedRow,AddedCol) ->
+    PossSize = length(PossH),
+    if (PossSize > 1) ->
+        if (Row == AddedRow) ->
+            NewResult = Result ++ [ertekek({SudokuSize,FullMx},{Row,Col},Allrows,Allcols,Allsubcells,SimpleList)],
+            if (Col == length(FullMx)) ->
+                calculatePossibilites(PossT,SudokuSize,FullMx,T,Row+1,1,NewResult,Allrows,Allcols,Allsubcells,SimpleList,AddedRow,AddedCol);
+            (1==1) ->
+                calculatePossibilites(PossT,SudokuSize,FullMx,T,Row,Col+1,NewResult,Allrows,Allcols,Allsubcells,SimpleList,AddedRow,AddedCol)
+            end;
+        (1==1)->
+            if (Col == AddedCol) ->
+                NewResult = Result ++ [ertekek({SudokuSize,FullMx},{Row,Col},Allrows,Allcols,Allsubcells,SimpleList)],
+                if (Col == length(FullMx)) ->
+                    calculatePossibilites(PossT,SudokuSize,FullMx,T,Row+1,1,NewResult,Allrows,Allcols,Allsubcells,SimpleList,AddedRow,AddedCol);
+                (1==1) ->
+                    calculatePossibilites(PossT,SudokuSize,FullMx,T,Row,Col+1,NewResult,Allrows,Allcols,Allsubcells,SimpleList,AddedRow,AddedCol)
+                end;
+            (1==1) ->
+                NewResult = Result ++ [PossH],
+                if (Col == length(FullMx)) ->
+                    calculatePossibilites(PossT,SudokuSize,FullMx,T,Row+1,1,NewResult,Allrows,Allcols,Allsubcells,SimpleList,AddedRow,AddedCol);
+                (1==1) ->
+                    calculatePossibilites(PossT,SudokuSize,FullMx,T,Row,Col+1,NewResult,Allrows,Allcols,Allsubcells,SimpleList,AddedRow,AddedCol)
+                end               
+            end
+
+        end;        
+    (1==1) ->
+        NewResult = Result ++ [PossH],
+        if (Col == length(FullMx)) ->
+            calculatePossibilites(PossT,SudokuSize,FullMx,T,Row+1,1,NewResult,Allrows,Allcols,Allsubcells,SimpleList,AddedRow,AddedCol);
+        (1==1) ->
+            calculatePossibilites(PossT,SudokuSize,FullMx,T,Row,Col+1,NewResult,Allrows,Allcols,Allsubcells,SimpleList,AddedRow,AddedCol)
+        end
+    end.
+
 
 addPossibleSteps([],[],Result) -> Result;
 addPossibleSteps([],_,Result) -> Result;
@@ -385,6 +601,41 @@ isqrt(_, R, _) -> R.
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+checkListForNumber([]) -> false;
+checkListForNumber([H|T]) ->
+    if (H < 101) ->
+        if (H > 0) ->
+            true;
+        (1==1) ->
+            checkListForNumber(T)
+        end;
+    (1==1) ->
+        checkListForNumber(T)
+    end.
+
+getNumberFromList([]) -> 0;
+getNumberFromList([H|T]) ->
+    if (H < 101 ) ->
+        if (H > 0 ) ->
+            H;
+        (1==1) ->
+            getNumberFromList(T)
+        end;
+    (1==1) ->
+        getNumberFromList(T)
+    end.
 
 
 

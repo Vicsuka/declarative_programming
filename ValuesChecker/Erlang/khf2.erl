@@ -79,6 +79,7 @@ checkNeighborsCONSTRAINT(Matrix,RowN,ColN,Size) ->
 
     CheckSouth = listFind(s,List),
     CheckWest = listFind(w,List),
+    
 
     if (CheckSouth) ->
         if (RowN == Size) ->
@@ -109,10 +110,12 @@ checkNeighborsCONSTRAINT(Matrix,RowN,ColN,Size) ->
                                 if (IsWestEven) ->
                                     generateEvenValues(Size,1,[]);
                                 (1==1) ->
+                                    % io:format("IMPOSSIBLE WEST&SOUTH!!! ~n"),
                                     generateAllPossibleValues(Size, 1, []) 
                                 end;  
                             (1==1) ->
                                 if (IsWestEven) ->
+                                    % io:format("IMPOSSIBLE WEST&SOUTH!!! ~n"),
                                     generateAllPossibleValues(Size,1,[]);
                                 (1==1) ->
                                     generateOddValues(Size, 1, [])  
@@ -166,17 +169,21 @@ checkNeighborsCONSTRAINT(Matrix,RowN,ColN,Size) ->
     (1==1) ->
         if (CheckWest) ->
             if (ColN == 1) ->
+                % io:format("IMPOSSIBLE WEST!!! ~n"),
                 generateAllPossibleValues(Size, 1, []);
             (1==1) ->
-                %CHECK WEST
-                % WestField = lists:nth(((RowN-1) * Size + ColN - 1) , SimpleProposalList),
-                % [WestList|_] = WestField,
-                % WestNumberC = checkListForNumber(WestList),
+                %CHECK WEST                
+                % WestField2 = lists:nth(((RowN-1) * Size + ColN - 1) , SimpleProposalList),
+                % [WestListT|_] = WestField2,
+                % WestNumberCo = checkListForNumber(WestListT),
 
-                % if (WestNumberC) ->
-                %     WestNumber = getNumberFromList(WestList),
+                % if (WestNumberCo) ->                    
+                %     % io:format("In FIeld: ~p ~n", [List]),
+                %     % io:format("To Number: ~p ~n", [WestListT]),
+
+                %     WestNumberr = getNumberFromList(WestListT),
                 %     %WEST NUMBER
-                %     IsWestEven = even(WestNumber),
+                %     IsWestEven = even(WestNumberr),
                 %     if (IsWestEven) ->
                 %         generateEvenValues(Size,1,[]);
                 %     (1==1) ->
